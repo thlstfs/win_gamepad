@@ -17,16 +17,57 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   String _platformVersion = 'Unknown';
-
+  String eventVal = 'test';
   @override
   void initState() {
     super.initState();
-    initPlatformState();
+    getData();
+    connect();
+    init();
+    //disconnect();
   }
 
   @override
   void dispose() {
     super.dispose();
+  }
+
+  void getData() async {
+    Future.delayed(const Duration(milliseconds: 16)).then((value) async {
+      await initPlatformState();
+      getData();
+    });
+  }
+
+  void init() async {
+    WinGamepad.eventStream.listen((event) {
+      eventVal = event.toString();
+      setState(() {
+        print(event);
+      });
+    });
+  }
+
+  Future<void> connect() async {
+    String res;
+    try {
+      res = await WinGamepad.connect() ?? 'Unknown platform version';
+      print(res);
+      // ignore: empty_catches
+    } on PlatformException {
+      res = 'Failed to connect.';
+    }
+  }
+
+  Future<void> disconnect() async {
+    String res;
+    try {
+      res = await WinGamepad.disconnect() ?? 'Unknown platform version';
+      print(res);
+      // ignore: empty_catches
+    } on PlatformException {
+      res = 'Failed to disconnect.';
+    }
   }
 
   // Platform messages are asynchronous, so we initialize in an async method.
@@ -59,7 +100,21 @@ class _MyAppState extends State<MyApp> {
           title: const Text('Plugin example app'),
         ),
         body: Center(
-          child: Text('Running on: $_platformVersion\n'),
+          child: Column(
+            children: [
+              CircleAvatar(
+                child: const Text(
+                  'A',
+                  style: TextStyle(color: Colors.white),
+                ),
+                backgroundColor: _platformVersion == "A"
+                    ? Colors.red.shade600
+                    : Colors.red.shade300,
+              ),
+              Text('Running on: $_platformVersion\n'),
+              Text('$eventVal\n'),
+            ],
+          ),
         ),
         floatingActionButton: FloatingActionButton(
           onPressed: () async {
