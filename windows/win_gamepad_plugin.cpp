@@ -25,6 +25,9 @@
 #pragma comment(lib, "XInput.lib")
 
 #pragma comment(lib, "Xinput9_1_0.lib")
+
+
+
 namespace
 {
   
@@ -34,12 +37,13 @@ public:
 	MyStreamHandler () = default;
 	virtual ~MyStreamHandler () = default;
 
-	void on_callback (double _data) {
+	void on_callback (const flutter::EncodableMap _map) {
         if (uint64_t (this) == 0xddddddddddddddddul)
             return;
         std::unique_lock<std::mutex> _ul (m_mtx);
-	
-		    m_value = _data;
+
+
+		    m_value = _map;
         if (m_sink.get())
 		      m_sink.get()->Success (m_value);
 	}
@@ -63,7 +67,40 @@ private:
 	std::unique_ptr<flutter::EventSink<T>> m_sink;
 };
 
+flutter::EncodableMap XINPUT_GAMEPAD_to_EncodableMap(const XINPUT_GAMEPAD& gamepad)
+{
+  std::vector<uint8_t> buttons;
+  if (gamepad.wButtons & XINPUT_GAMEPAD_DPAD_UP)        buttons.push_back(0);
+  if (gamepad.wButtons & XINPUT_GAMEPAD_DPAD_DOWN)      buttons.push_back(1);
+  if (gamepad.wButtons & XINPUT_GAMEPAD_DPAD_LEFT)      buttons.push_back(2);
+  if (gamepad.wButtons & XINPUT_GAMEPAD_DPAD_RIGHT)     buttons.push_back(3);
+  if (gamepad.wButtons & XINPUT_GAMEPAD_START)          buttons.push_back(4);
+  if (gamepad.wButtons & XINPUT_GAMEPAD_BACK)           buttons.push_back(5);
+  if (gamepad.wButtons & XINPUT_GAMEPAD_LEFT_THUMB)     buttons.push_back(6);
+  if (gamepad.wButtons & XINPUT_GAMEPAD_RIGHT_THUMB)    buttons.push_back(7);
+  if (gamepad.wButtons & XINPUT_GAMEPAD_LEFT_SHOULDER)  buttons.push_back(8);
+  if (gamepad.wButtons & XINPUT_GAMEPAD_RIGHT_SHOULDER) buttons.push_back(9);
+  if (gamepad.wButtons & XINPUT_GAMEPAD_A)              buttons.push_back(10);
+  if (gamepad.wButtons & XINPUT_GAMEPAD_B)              buttons.push_back(11);
+  if (gamepad.wButtons & XINPUT_GAMEPAD_X)              buttons.push_back(12);
+  if (gamepad.wButtons & XINPUT_GAMEPAD_Y)              buttons.push_back(13);
+  std::vector<uint8_t> triggers;
+  triggers.push_back((uint8_t) gamepad.bLeftTrigger);
+  triggers.push_back((uint8_t) gamepad.bRightTrigger);
 
+  std::vector<int32_t> thumbs;
+  thumbs.push_back((int32_t)gamepad.sThumbLX);
+  thumbs.push_back((int32_t)gamepad.sThumbLY);
+  thumbs.push_back((int32_t)gamepad.sThumbRX);
+  thumbs.push_back((int32_t)gamepad.sThumbRY);
+  return flutter::EncodableMap{
+    {flutter::EncodableValue("buttons"),buttons},
+    {flutter::EncodableValue("triggers"),triggers},
+    {flutter::EncodableValue("thumbs"),thumbs}
+  };
+
+
+}
   class WinGamepadPlugin : public flutter::Plugin
   {
   public:
@@ -176,11 +213,11 @@ private:
             timeNow = std::chrono::system_clock::now();
             XINPUT_STATE state;
             DWORD playerIndex = 0;
-
+            
             DWORD dwresult = XInputGetState(playerIndex, &state);
             if (dwresult == ERROR_SUCCESS && state.dwPacketNumber)
             {
-              stream_handler->on_callback((double)state.Gamepad.bLeftTrigger);
+              stream_handler->on_callback(XINPUT_GAMEPAD_to_EncodableMap(state.Gamepad));
               
             }
             std::this_thread::sleep_until(timeNow + sleepTime);
@@ -200,6 +237,7 @@ private:
     }
   }
 
+  
 } // namespace
 
 void WinGamepadPluginRegisterWithRegistrar(
