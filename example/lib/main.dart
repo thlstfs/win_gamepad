@@ -4,6 +4,7 @@ import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:win_gamepad/gamepad.dart';
 import 'package:win_gamepad/win_gamepad.dart';
+import 'package:win_gamepad/gamepad_layout.dart';
 
 void main() {
   runApp(const MyApp());
@@ -18,37 +19,22 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   String _platformVersion = 'Unknown';
-  String eventVal = 'test';
-  late Gamepad gamepad;
   @override
   void initState() {
     super.initState();
-    gamepad = Gamepad();
-    getData();
     connect();
-    init();
-    //disconnect();
   }
 
   @override
   void dispose() {
     super.dispose();
+    disconnect();
   }
 
   void getData() async {
     Future.delayed(const Duration(milliseconds: 16)).then((value) async {
       await initPlatformState();
       getData();
-    });
-  }
-
-  void init() async {
-    WinGamepad.eventStream.listen((event) {
-      eventVal = event.toString();
-      gamepad.update(Map<String, dynamic>.from(event));
-      setState(() {
-        print(gamepad.state);
-      });
     });
   }
 
@@ -106,17 +92,12 @@ class _MyAppState extends State<MyApp> {
         body: Center(
           child: Column(
             children: [
-              CircleAvatar(
-                child: const Text(
-                  'A',
-                  style: TextStyle(color: Colors.white),
+              Opacity(
+                opacity: 0.5,
+                child: GamepadLayout(
+                  gamepadStateStream: WinGamepad.eventStream,
                 ),
-                backgroundColor: _platformVersion == "A"
-                    ? Colors.red.shade600
-                    : Colors.red.shade300,
               ),
-              Text('Running on: $_platformVersion\n'),
-              Text('${gamepad.state}\n'),
             ],
           ),
         ),

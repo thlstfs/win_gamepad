@@ -66,6 +66,10 @@ class GamepadState {
         (index) => GamepadButton.values[map['buttons'][index] as int]);
   }
 
+  bool isPressed(GamepadButton button) {
+    return buttons.any((element) => element == button);
+  }
+
   @override
   String toString() {
     String buttons = this.buttons.toString();
