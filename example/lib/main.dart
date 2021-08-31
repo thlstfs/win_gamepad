@@ -87,13 +87,13 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp(
       home: Scaffold(
         appBar: AppBar(
-          title: const Text('Plugin example app'),
+          title: const Text('Plugin win_gamepad'),
         ),
         body: Center(
           child: Column(
             children: [
               Opacity(
-                opacity: 0.5,
+                opacity: 1,
                 child: GamepadLayout(
                   gamepadStateStream: WinGamepad.eventStream,
                 ),

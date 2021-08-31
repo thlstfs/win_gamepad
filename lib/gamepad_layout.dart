@@ -98,7 +98,10 @@ class _GamepadLayoutState extends State<GamepadLayout> {
                   ),
                 ],
               ),
-              FaceButtons(gamepad: gamepad),
+              FaceButtons(
+                gamepad: gamepad,
+                size: width * 0.25,
+              ),
             ],
           ),
           Row(
@@ -287,15 +290,17 @@ class FaceButtons extends StatelessWidget {
   const FaceButtons({
     Key? key,
     required this.gamepad,
+    required this.size,
   }) : super(key: key);
 
   final Gamepad gamepad;
+  final double size;
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 150,
-      height: 150,
+      width: size,
+      height: size,
       child: Stack(
         fit: StackFit.expand,
         children: [

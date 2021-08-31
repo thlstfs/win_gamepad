@@ -85,10 +85,12 @@ flutter::EncodableMap XINPUT_GAMEPAD_to_EncodableMap(const XINPUT_GAMEPAD& gamep
   if (gamepad.wButtons & XINPUT_GAMEPAD_X)              buttons.push_back(12);
   if (gamepad.wButtons & XINPUT_GAMEPAD_Y)              buttons.push_back(13);
   std::vector<uint8_t> triggers;
+  triggers.reserve(2);
   triggers.push_back((uint8_t) gamepad.bLeftTrigger);
   triggers.push_back((uint8_t) gamepad.bRightTrigger);
 
   std::vector<int32_t> thumbs;
+  triggers.reserve(4);
   thumbs.push_back((int32_t)gamepad.sThumbLX);
   thumbs.push_back((int32_t)gamepad.sThumbLY);
   thumbs.push_back((int32_t)gamepad.sThumbRX);
