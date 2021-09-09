@@ -20,13 +20,13 @@
 #include <mutex>
 
 #include <Xinput.h>
-#include <stdio.h>
+#include <iostream>
 
 #pragma comment(lib, "XInput.lib")
 
 #pragma comment(lib, "Xinput9_1_0.lib")
 
-
+#pragma warning(disable:4244)
 
 namespace
 {
@@ -41,8 +41,6 @@ public:
         if (uint64_t (this) == 0xddddddddddddddddul)
             return;
         std::unique_lock<std::mutex> _ul (m_mtx);
-
-
 		    m_value = _map;
         if (m_sink.get())
 		      m_sink.get()->Success (m_value);
@@ -62,12 +60,12 @@ protected:
 	}
 
 private:
-	flutter::EncodableValue m_value;
+	flutter::EncodableMap m_value;
     std::mutex m_mtx;
 	std::unique_ptr<flutter::EventSink<T>> m_sink;
 };
 
-flutter::EncodableMap XINPUT_GAMEPAD_to_EncodableMap(const XINPUT_GAMEPAD& gamepad)
+flutter::EncodableMap XINPUT_GAMEPAD_to_EncodableMap(const XINPUT_GAMEPAD gamepad)
 {
   std::vector<uint8_t> buttons;
   if (gamepad.wButtons & XINPUT_GAMEPAD_DPAD_UP)        buttons.push_back(0);
@@ -108,6 +106,8 @@ flutter::EncodableMap XINPUT_GAMEPAD_to_EncodableMap(const XINPUT_GAMEPAD& gamep
   public:
     MyStreamHandler<> *stream_handler = nullptr;
     std::atomic<bool> is_connected;
+    std::atomic<DWORD> deviceIndex{0};
+    std::atomic<bool> autoVibration{false};
   public:
     static void RegisterWithRegistrar(flutter::PluginRegistrarWindows *registrar);
 
@@ -118,6 +118,8 @@ flutter::EncodableMap XINPUT_GAMEPAD_to_EncodableMap(const XINPUT_GAMEPAD& gamep
   private:
     std::unique_ptr<flutter::MethodChannel<flutter::EncodableValue>> m_method_channel;
     std::unique_ptr<flutter::EventChannel<flutter::EncodableValue>> m_event_channel;
+    std::thread thread;
+    
     // Called when a method is called on this plugin's channel from Dart.
     void HandleMethodCall(
         const flutter::MethodCall<flutter::EncodableValue> &method_call,
@@ -179,59 +181,88 @@ flutter::EncodableMap XINPUT_GAMEPAD_to_EncodableMap(const XINPUT_GAMEPAD& gamep
         version_stream << "7";
       }
       result->Success(flutter::EncodableValue(version_stream.str()));
-    }
-    else if (_method_name.compare("getGamepadState") == 0)
-    {
-      std::ostringstream version_stream;
+
+    } else if (method_call.method_name().compare("selectGamepad") == 0) {
+      flutter::EncodableMap arguments = std::get<flutter::EncodableMap>(*method_call.arguments());
+      DWORD id = std::get<int>(arguments[flutter::EncodableValue("id")]);
+      deviceIndex.store(id);
+      result->Success(true);
+
+    } else if (method_call.method_name().compare("setAutoVibration") == 0) {
+      flutter::EncodableMap arguments = std::get<flutter::EncodableMap>(*method_call.arguments());
+      bool value = std::get<bool>(arguments[flutter::EncodableValue("value")]);
+      autoVibration.store(value);
+      result->Success(true);
+
+    } else if (method_call.method_name().compare("setVibration") == 0) {
+      XINPUT_VIBRATION vibration;
+      flutter::EncodableMap arguments = std::get<flutter::EncodableMap>(*method_call.arguments());
+      double leftMotorSpeed = std::get<double>(arguments[flutter::EncodableValue("leftMotorSpeed")]);
+      double rightMotorSpeed = std::get<double>(arguments[flutter::EncodableValue("rightMotorSpeed")]);
+      leftMotorSpeed = leftMotorSpeed > 1 ? 1 : (leftMotorSpeed < 0 ? 0 : leftMotorSpeed);
+      rightMotorSpeed = rightMotorSpeed > 1 ? 1 : (rightMotorSpeed < 0 ? 0 : rightMotorSpeed);
+      
+      vibration.wLeftMotorSpeed  = leftMotorSpeed * 0xFFFF;
+      vibration.wRightMotorSpeed = rightMotorSpeed * 0xFFFF;
+      XInputSetState(deviceIndex.load(), &vibration);
+      result->Success(true);
+      
+    } else if (_method_name.compare("getAvaibleDevices") == 0) {
+      flutter::EncodableList devices;
       XINPUT_STATE state;
-      DWORD playerIndex = 0;
-
-      DWORD dwresult = XInputGetState(playerIndex, &state);
-      if (dwresult == ERROR_SUCCESS && state.dwPacketNumber)
+      
+      for (DWORD i = 0; i < 10; i++)
       {
-        if (state.Gamepad.wButtons & XINPUT_GAMEPAD_A)
+        DWORD dwresult = XInputGetState(i, &state);
+        if (dwresult == ERROR_SUCCESS && state.dwPacketNumber)
         {
-          version_stream << "A";
+          devices.push_back((uint8_t) i);
+          
         }
-        if (state.Gamepad.wButtons & XINPUT_GAMEPAD_B)
-        {
-          version_stream << "B";
-        }
-
-        XINPUT_VIBRATION vibration;
-        vibration.wLeftMotorSpeed = state.Gamepad.bLeftTrigger * 0xFFFF / 0xFF;
-        vibration.wRightMotorSpeed = state.Gamepad.bRightTrigger * 0xFFFF / 0xFF;
-        XInputSetState(0, &vibration);
-        result->Success(flutter::EncodableValue(version_stream.str()));
       }
-    }
-    else if (_method_name.compare("connect") == 0) {
+      result->Success(devices);
+      
+    } else if (_method_name.compare("initialize") == 0) {
       if (!is_connected.load()) {
         is_connected.store(true);
-        std::thread([this] () {
+        thread = std::thread([this] () {
           auto timeNow = std::chrono::system_clock::now();
           auto sleepTime = std::chrono::milliseconds(30);
+          XINPUT_STATE state;
+          DWORD dwresult;
+          XINPUT_VIBRATION vibration;
           while (is_connected.load()) {
             timeNow = std::chrono::system_clock::now();
-            XINPUT_STATE state;
-            DWORD playerIndex = 0;
-            
-            DWORD dwresult = XInputGetState(playerIndex, &state);
+            dwresult = XInputGetState(deviceIndex.load(), &state);
+
             if (dwresult == ERROR_SUCCESS && state.dwPacketNumber)
             {
               stream_handler->on_callback(XINPUT_GAMEPAD_to_EncodableMap(state.Gamepad));
               
+              if (autoVibration.load()) {
+                vibration.wLeftMotorSpeed  = state.Gamepad.bLeftTrigger  * 0xFFFF / 0xFF;
+                vibration.wRightMotorSpeed = state.Gamepad.bRightTrigger * 0xFFFF / 0xFF;
+                XInputSetState(deviceIndex.load(), &vibration);
+              
+              }
             }
             std::this_thread::sleep_until(timeNow + sleepTime);
           }
-        }).detach();
-        result->Success(flutter::EncodableValue("connected"));
+        });
+        thread.detach();
+        result->Success(flutter::EncodableValue("initialized"));
       }
-    }
-    else if (_method_name.compare("disconnect") == 0) {
+      else {
+        result->Success(flutter::EncodableValue("already initialized"));
+      }
+
+    } else if (_method_name.compare("cleanup") == 0) {
       is_connected.store(false);
-      result->Success(flutter::EncodableValue("disconnected"));
-      
+      deviceIndex.store(0);
+      autoVibration.store(false);
+      thread.~thread();
+      result->Success(flutter::EncodableValue("cleanup"));
+
     }
     else
     {

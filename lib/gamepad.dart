@@ -1,3 +1,5 @@
+import 'package:win_gamepad/win_gamepad.dart';
+
 enum GamepadButton {
   dpadUp,
   dpadDown,
@@ -16,11 +18,66 @@ enum GamepadButton {
 }
 
 class Gamepad {
-  late bool isConnected;
-  late GamepadState state;
-  Gamepad() {
-    isConnected = false;
-    state = GamepadState();
+  late bool isConnected = false;
+  late GamepadState state = GamepadState();
+  late int deviceIndex = 0;
+
+  Future<void> initialize({Function(GamepadState state)? onCallback}) async {
+    var res;
+    try {
+      List<int> devices = await getAvaibleDevices();
+      if (devices.isNotEmpty) {
+        await selectGamepad(devices[0]);
+      }
+      res = await WinGamepad.initialize();
+      isConnected = true;
+    } on Exception {}
+    WinGamepad.eventStream.listen((event) {
+      update(Map<String, dynamic>.from(event));
+      if (onCallback != null) {
+        onCallback(state);
+      }
+      print(state);
+    });
+  }
+
+  Future<List<int>> getAvaibleDevices() async {
+    List<int> res;
+    try {
+      res = await WinGamepad.getAvaibleDevices;
+      return res;
+    } on Exception {
+      return [];
+    }
+  }
+
+  Future<bool> setAutoVibration(bool value) async {
+    try {
+      bool res = await WinGamepad.setAutoVibration(value);
+      return res;
+    } on Exception {
+      return false;
+    }
+  }
+
+  Future<bool> setVibration(
+      double leftMotorSpeed, double rightMotorSpeed) async {
+    try {
+      var res = await WinGamepad.setVibration(leftMotorSpeed, rightMotorSpeed);
+      return res;
+    } on Exception {
+      return false;
+    }
+  }
+
+  Future<bool> selectGamepad(int index) async {
+    try {
+      var res = await WinGamepad.selectGamepad(index);
+      deviceIndex = index;
+      return res;
+    } on Exception {
+      return false;
+    }
   }
 
   void update(Map<String, dynamic> map) {

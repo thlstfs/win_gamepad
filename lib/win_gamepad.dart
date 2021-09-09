@@ -8,11 +8,11 @@ class WinGamepad {
       MethodChannel('com.thlstfs.win_gamepad/methods');
   static const EventChannel _eventChannel =
       EventChannel('com.thlstfs.win_gamepad/events');
-  static late Stream<dynamic> _eventStream;
+  static Stream<dynamic>? _eventStream;
 
   static Stream<dynamic> get eventStream {
-    _eventStream = _eventChannel.receiveBroadcastStream();
-    return _eventStream;
+    _eventStream ??= _eventChannel.receiveBroadcastStream();
+    return _eventStream as Stream<dynamic>;
   }
 
   static Future<String?> get platformVersion async {
@@ -20,18 +20,36 @@ class WinGamepad {
     return version;
   }
 
-  static Future<String?> get gamepadState async {
-    final String? version = await _channel.invokeMethod('getGamepadState');
+  static Future<bool> selectGamepad(int id) async {
+    final bool? res = await _channel.invokeMethod('selectGamepad', {"id": id});
+    return res ?? false;
+  }
+
+  static Future<bool> setAutoVibration(bool value) async {
+    final bool? res =
+        await _channel.invokeMethod('setAutoVibration', {"value": value});
+    return res ?? false;
+  }
+
+  static Future<bool> setVibration(
+      double leftMotorSpeed, double rightMotorSpeed) async {
+    final bool? res = await _channel.invokeMethod('setVibration',
+        {"leftMotorSpeed": leftMotorSpeed, "rightMotorSpeed": rightMotorSpeed});
+    return res ?? false;
+  }
+
+  static Future<List<int>> get getAvaibleDevices async {
+    List<int>? list = await _channel.invokeListMethod('getAvaibleDevices');
+    return list ?? [];
+  }
+
+  static Future<String?> initialize() async {
+    final String? version = await _channel.invokeMethod('initialize');
     return version;
   }
 
-  static Future<String?> connect() async {
-    final String? version = await _channel.invokeMethod('connect');
-    return version;
-  }
-
-  static Future<String?> disconnect() async {
-    final String? version = await _channel.invokeMethod('disconnect');
-    return version;
+  static Future<String?> cleanup() async {
+    final String? res = await _channel.invokeMethod('cleanup');
+    return res;
   }
 }

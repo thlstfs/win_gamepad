@@ -4,12 +4,9 @@ import 'package:win_gamepad/win_gamepad.dart';
 
 class GamepadLayout extends StatefulWidget {
   const GamepadLayout(
-      {Key? key,
-      required this.gamepadStateStream,
-      this.heigth = 400,
-      this.width = 600})
+      {Key? key, required this.gamepad, this.heigth = 400, this.width = 600})
       : super(key: key);
-  final Stream<dynamic> gamepadStateStream;
+  final Gamepad gamepad;
   final double width;
   final double heigth;
   @override
@@ -17,7 +14,6 @@ class GamepadLayout extends StatefulWidget {
 }
 
 class _GamepadLayoutState extends State<GamepadLayout> {
-  Gamepad gamepad = Gamepad();
   double width = 600;
   double height = 400;
 
@@ -26,16 +22,6 @@ class _GamepadLayoutState extends State<GamepadLayout> {
     super.initState();
     width = widget.width;
     height = widget.heigth;
-    init();
-  }
-
-  void init() async {
-    WinGamepad.eventStream.listen((event) {
-      gamepad.update(Map<String, dynamic>.from(event));
-      setState(() {
-        print(gamepad.state);
-      });
-    });
   }
 
   @override
@@ -53,12 +39,12 @@ class _GamepadLayoutState extends State<GamepadLayout> {
                 children: [
                   RoundedTrigger(
                     title: '  LT  ',
-                    pressure: gamepad.state.leftTrigger,
+                    pressure: widget.gamepad.state.leftTrigger,
                   ),
                   RoundedButton(
                     title: '  LB  ',
-                    isPressed:
-                        gamepad.state.isPressed(GamepadButton.leftShoulder),
+                    isPressed: widget.gamepad.state
+                        .isPressed(GamepadButton.leftShoulder),
                   ),
                 ],
               ),
@@ -66,12 +52,12 @@ class _GamepadLayoutState extends State<GamepadLayout> {
                 children: [
                   RoundedTrigger(
                     title: '  RT  ',
-                    pressure: gamepad.state.rightTrigger,
+                    pressure: widget.gamepad.state.rightTrigger,
                   ),
                   RoundedButton(
                     title: '  RB  ',
-                    isPressed:
-                        gamepad.state.isPressed(GamepadButton.rightShoulder),
+                    isPressed: widget.gamepad.state
+                        .isPressed(GamepadButton.rightShoulder),
                   ),
                 ],
               ),
@@ -82,24 +68,27 @@ class _GamepadLayoutState extends State<GamepadLayout> {
             children: [
               Thumb(
                 title: 'L',
-                thumbX: gamepad.state.leftThumbX,
-                thumbY: gamepad.state.leftThumbY,
-                ispressed: gamepad.state.isPressed(GamepadButton.leftThumb),
+                thumbX: widget.gamepad.state.leftThumbX,
+                thumbY: widget.gamepad.state.leftThumbY,
+                ispressed:
+                    widget.gamepad.state.isPressed(GamepadButton.leftThumb),
               ),
               Row(
                 children: [
                   RoundedButton(
                     title: 'Back',
-                    isPressed: gamepad.state.isPressed(GamepadButton.back),
+                    isPressed:
+                        widget.gamepad.state.isPressed(GamepadButton.back),
                   ),
                   RoundedButton(
                     title: 'Start',
-                    isPressed: gamepad.state.isPressed(GamepadButton.start),
+                    isPressed:
+                        widget.gamepad.state.isPressed(GamepadButton.start),
                   ),
                 ],
               ),
               FaceButtons(
-                gamepad: gamepad,
+                gamepad: widget.gamepad,
                 size: width * 0.25,
               ),
             ],
@@ -107,12 +96,13 @@ class _GamepadLayoutState extends State<GamepadLayout> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              Dpad(gamepad: gamepad),
+              Dpad(gamepad: widget.gamepad),
               Thumb(
                 title: 'R',
-                thumbX: gamepad.state.rightThumbX,
-                thumbY: gamepad.state.rightThumbY,
-                ispressed: gamepad.state.isPressed(GamepadButton.rightThumb),
+                thumbX: widget.gamepad.state.rightThumbX,
+                thumbY: widget.gamepad.state.rightThumbY,
+                ispressed:
+                    widget.gamepad.state.isPressed(GamepadButton.rightThumb),
               ),
             ],
           ),
