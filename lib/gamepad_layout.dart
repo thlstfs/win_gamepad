@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:win_gamepad/gamepad.dart';
-import 'package:win_gamepad/win_gamepad.dart';
 
 class GamepadLayout extends StatefulWidget {
   const GamepadLayout(

@@ -23,13 +23,12 @@ class Gamepad {
   late int deviceIndex = 0;
 
   Future<void> initialize({Function(GamepadState state)? onCallback}) async {
-    var res;
     try {
       List<int> devices = await getAvaibleDevices();
       if (devices.isNotEmpty) {
         await selectGamepad(devices[0]);
       }
-      res = await WinGamepad.initialize();
+      var res = await WinGamepad.initialize();
       isConnected = true;
     } on Exception {}
     WinGamepad.eventStream.listen((event) {

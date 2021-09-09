@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
-import 'dart:async';
 
-import 'package:flutter/services.dart';
 import 'package:win_gamepad/gamepad.dart';
-import 'package:win_gamepad/win_gamepad.dart';
 import 'package:win_gamepad/gamepad_layout.dart';
 
 void main() {

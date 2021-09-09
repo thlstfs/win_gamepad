@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/services.dart';
-import 'package:win_gamepad/gamepad.dart';
 
 class WinGamepad {
   static const MethodChannel _channel =
