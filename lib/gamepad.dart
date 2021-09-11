@@ -28,18 +28,18 @@ class Gamepad {
       if (devices.isNotEmpty) {
         await selectGamepad(devices[0]);
       }
-      var res = await WinGamepad.initialize();
+      await WinGamepad.initialize();
       isConnected = true;
-    } on Exception {}
+    } catch (_) {}
     WinGamepad.eventStream.listen((event) {
       update(Map<String, dynamic>.from(event));
       if (onCallback != null) {
         onCallback(state);
       }
-      print(state);
     });
   }
 
+  // returns avaible device ids
   Future<List<int>> getAvaibleDevices() async {
     List<int> res;
     try {
@@ -50,6 +50,7 @@ class Gamepad {
     }
   }
 
+  // when auto vibration is true, gamepad vibrates via triggers.
   Future<bool> setAutoVibration(bool value) async {
     try {
       bool res = await WinGamepad.setAutoVibration(value);
@@ -59,6 +60,7 @@ class Gamepad {
     }
   }
 
+  // leftMotorSpeed and rightMotorSpeed are should be between 0.0 and 1.0
   Future<bool> setVibration(
       double leftMotorSpeed, double rightMotorSpeed) async {
     try {
@@ -69,10 +71,10 @@ class Gamepad {
     }
   }
 
-  Future<bool> selectGamepad(int index) async {
+  Future<bool> selectGamepad(int id) async {
     try {
-      var res = await WinGamepad.selectGamepad(index);
-      deviceIndex = index;
+      var res = await WinGamepad.selectGamepad(id);
+      deviceIndex = id;
       return res;
     } on Exception {
       return false;

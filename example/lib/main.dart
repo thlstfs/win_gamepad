@@ -19,10 +19,9 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
-    gamepad.initialize(onCallback: (state) {
+    gamepad.initialize(onCallback: (gamepadState) {
       setState(() {});
     });
-    gamepad.setAutoVibration(false);
   }
 
   @override
