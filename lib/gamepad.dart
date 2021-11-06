@@ -22,21 +22,27 @@ class Gamepad {
   late GamepadState state = GamepadState();
   late int deviceIndex = 0;
 
-  Future<void> initialize({Function(GamepadState state)? onCallback}) async {
+  Future<void> initialize(
+      {Function(GamepadState state)? onCallback,
+      Function(Map<String, dynamic> event)? onEventCallback}) async {
     try {
       List<int> devices = await getAvaibleDevices();
       if (devices.isNotEmpty) {
         await selectGamepad(devices[0]);
       }
-      await WinGamepad.initialize();
+      await WinGamepad.initialize().then((value) {
+        WinGamepad.eventStream.listen((event) {
+          update(Map<String, dynamic>.from(event));
+          if (onCallback != null) {
+            onCallback(state);
+          }
+          if (onEventCallback != null) {
+            onEventCallback(Map<String, dynamic>.from(event));
+          }
+        });
+      });
       isConnected = true;
     } catch (_) {}
-    WinGamepad.eventStream.listen((event) {
-      update(Map<String, dynamic>.from(event));
-      if (onCallback != null) {
-        onCallback(state);
-      }
-    });
   }
 
   // returns avaible device ids

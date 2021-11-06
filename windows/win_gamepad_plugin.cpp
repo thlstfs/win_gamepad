@@ -113,7 +113,9 @@ namespace
     return flutter::EncodableMap{
         {flutter::EncodableValue("buttons"), buttons},
         {flutter::EncodableValue("triggers"), triggers},
-        {flutter::EncodableValue("thumbs"), thumbs}};
+        {flutter::EncodableValue("thumbs"), thumbs},
+        {flutter::EncodableValue("rawButtons"), static_cast<int>(gamepad.wButtons)}
+        };
   }
   class WinGamepadPlugin : public flutter::Plugin
   {
